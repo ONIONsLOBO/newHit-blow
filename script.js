@@ -1,27 +1,17 @@
-const COLORS = [
-  { name: "赤", hex: "#e03131" },
-  { name: "緑", hex: "#2f9e44" },
-  { name: "青", hex: "#1c7ed6" },
-  { name: "黄", hex: "#fcc419" },
-  { name: "橙", hex: "#fd7e14" },
-  { name: "紫", hex: "#7048e8" },
-  { name: "桃", hex: "#f06595" },
-  { name: "水", hex: "#15aabf" },
-  { name: "茶", hex: "#8d6e4c" },
-  { name: "灰", hex: "#868e96" },
-];
+// 色の名前は画面に出さず、読み上げ用にだけ使う(見た目は style.css の .c0〜.c9)
+const COLORS = ["青", "赤", "緑", "黄", "桃", "白", "橙", "紫", "水", "茶"];
 const MAX_TURNS = 10;
+const CPU_DELAY = 800; // CPUが次の予想を出すまでの時間(ミリ秒)
 
 const $ = (id) => document.getElementById(id);
 const slotsSelect = $("slots");
 const limitSelect = $("limit");
 const modeSelect = $("mode");
-const CPU_DELAY = 800; // CPUが次の予想を出すまでの時間(ミリ秒)
 
 let slots, colorCount, answer, guess, log, over;
 let limitSec, remaining, endAt, timerId = null;
-let secret, cpuLog, turn; // 対戦モード用(secret=自分の答え / cpuLog=CPUの予想履歴 / turn="player"か"cpu")
-let mode, phase, candidates, cpuTimer; // CPUモード用(phase: "set"=答えを決める / "run"=CPUが予想中)
+let secret, cpuLog, turn;            // 対戦モード用
+let mode, phase, candidates, cpuTimer; // phase: "set"=自分の答えを決める / "run"=CPUが予想中 / "play"=対戦中
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -31,22 +21,19 @@ function shuffle(arr) {
   return arr;
 }
 
-// ボールを1個作る(色の名前は画面に出さない)
 function makeBall(index, tag = "span") {
   const b = document.createElement(tag);
-  b.className = "ball";
-  b.style.backgroundColor = COLORS[index].hex;
+  b.className = "ball c" + index;
   if (tag === "button") {
     b.type = "button";
-    b.setAttribute("aria-label", COLORS[index].name);
+    b.setAttribute("aria-label", COLORS[index]);
   }
   return b;
 }
 
-function makeSlot(text = "") {
+function makeSlot() {
   const s = document.createElement("span");
   s.className = "slot";
-  s.textContent = text;
   return s;
 }
 
@@ -55,10 +42,7 @@ function judge(ans, g) {
   const hit = g.filter((c, i) => c === ans[i]).length;
   let common = 0;
   for (let c = 0; c < COLORS.length; c++) {
-    common += Math.min(
-      ans.filter((x) => x === c).length,
-      g.filter((x) => x === c).length
-    );
+    common += Math.min(ans.filter((x) => x === c).length, g.filter((x) => x === c).length);
   }
   return { hit, blow: common - hit };
 }
@@ -67,7 +51,7 @@ function newGame() {
   mode = modeSelect.value;
   const cpu = mode === "cpu";
   const multi = mode !== "player"; // CPUが予想するモード(CPU・対戦)
-  // CPUモードは候補を全部数え上げるので、ボールは8個まで
+  // CPUは候補を全部数え上げるので、ボールは8個まで
   [...slotsSelect.options].forEach((o) => { o.disabled = multi && Number(o.value) > 8; });
   if (multi && Number(slotsSelect.value) > 8) slotsSelect.value = "8";
   limitSelect.disabled = multi;
@@ -76,7 +60,7 @@ function newGame() {
 
   slots = Number(slotsSelect.value);
   colorCount = Math.max(6, slots);
-  const size = slots <= 6 ? 46 : slots <= 8 ? 40 : 34;
+  const size = slots <= 6 ? 42 : slots <= 8 ? 36 : 30;
   document.documentElement.style.setProperty("--ball", size + "px");
 
   answer = cpu ? [] : shuffle([...Array(colorCount).keys()]).slice(0, slots);
@@ -98,73 +82,118 @@ function newGame() {
   render();
 }
 
-function drawHistory(list, items) {
-  list.replaceChildren();
-  items.forEach((h, i) => {
-    const li = document.createElement("li");
-    const n = document.createElement("span");
-    n.className = "n";
-    n.textContent = i + 1;
-    li.append(n);
-    h.guess.forEach((c) => li.append(makeBall(c)));
-    const score = document.createElement("div");
-    score.className = "score";
-    score.innerHTML = `HIT <b>${h.hit}</b> / BLOW <b>${h.blow}</b>`;
-    li.append(score);
-    list.append(li);
-  });
+// 1枚の盤を描く。1ターン=1本の縦の列(上に ヒット/ブロー の穴、下にボールの穴)+右端に「答え」の列
+function drawBoard(el, o) {
+  el.replaceChildren();
+  el.style.setProperty("--n", slots);
+  el.style.setProperty("--kc", Math.ceil(slots / 2));
+  const ncols = mode === "player" ? MAX_TURNS : Math.max(MAX_TURNS, o.rows.length + (over ? 0 : 1));
+
+  const cols = document.createElement("div");
+  cols.className = "cols";
+  for (let i = 0; i < ncols; i++) {
+    const r = o.rows[i];
+    const col = document.createElement("div");
+    col.className = "col" + (i === o.activeCol ? " active" : "");
+    const num = document.createElement("div");
+    num.className = "num";
+    num.textContent = i + 1;
+    const keys = document.createElement("div");
+    keys.className = "keys";
+    const holes = document.createElement("div");
+    holes.className = "holes";
+    for (let k = 0; k < slots; k++) {
+      const key = document.createElement("span");
+      key.className = "key" + (r ? (k < r.hit ? " hit" : k < r.hit + r.blow ? " blow" : "") : "");
+      keys.append(key);
+      if (r) {
+        holes.append(makeBall(r.guess[k]));
+      } else if (i === o.activeCol && k < o.draft.length) {
+        holes.append(removable(o.draft[k], k, o.editable));
+      } else {
+        holes.append(makeSlot());
+      }
+    }
+    col.append(num, keys, holes);
+    cols.append(col);
+  }
+
+  const a = document.createElement("div");
+  a.className = "col answer";
+  const num = document.createElement("div");
+  num.className = "num";
+  num.textContent = "答え";
+  const keys = document.createElement("div");
+  keys.className = "keys blank";
+  for (let k = 0; k < slots; k++) keys.append(Object.assign(document.createElement("span"), { className: "key" }));
+  const holes = document.createElement("div");
+  holes.className = "holes";
+  if (o.answerMode === "cover") {
+    holes.classList.add("cover");
+    holes.textContent = "?";
+  } else {
+    for (let k = 0; k < slots; k++) {
+      if (o.answerMode === "input" && k < o.draft.length) holes.append(removable(o.draft[k], k, o.editable));
+      else if (o.answerMode === "show" && o.ans[k] !== undefined) holes.append(makeBall(o.ans[k]));
+      else holes.append(makeSlot());
+    }
+  }
+  a.append(num, keys, holes);
+  el.append(cols, a);
+
+  // 光っている列(なければ最後の列)が見える位置へ
+  if (o.answerMode === "input") {
+    el.scrollLeft = el.scrollWidth;
+  } else {
+    const act = el.querySelector(".col.active") || el.querySelector(".cols .col:nth-child(" + Math.max(1, o.rows.length) + ")");
+    if (act) {
+      const left = act.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
+      el.scrollLeft = left - el.clientWidth / 2 + act.offsetWidth / 2;
+    }
+  }
+}
+
+// 入れたボール(クリックで外せる)
+function removable(index, k, editable) {
+  const b = makeBall(index, "button");
+  b.title = "クリックで外す";
+  b.disabled = !editable;
+  b.onclick = () => { guess.splice(k, 1); render(); };
+  return b;
 }
 
 function render() {
-  // 入力を止める場面: 終了後 / 対戦でCPUの番
-  const lock = over || (mode === "versus" && phase === "play" && turn === "cpu");
-  const setting = mode === "cpu" || (mode === "versus" && phase === "set"); // 自分の答えを決める場面
-  $("answerTitle").textContent = mode === "versus" ? "CPUの答え(あなたが当てる)" : "答え";
+  const cpuTurn = mode === "versus" && phase === "play" && turn === "cpu";
+  const lock = over || cpuTurn;
+  const setting = (mode === "cpu" || mode === "versus") && phase === "set"; // 自分の答えを決める場面
 
-  // 答え(終わるまで「?」)
-  const ansRow = $("answer");
-  ansRow.replaceChildren();
-  const showAnswer = over || mode === "cpu"; // CPUモードの答えは自分で決めたものなので見せる
-  for (let i = 0; i < slots; i++) {
-    ansRow.append(showAnswer && answer[i] !== undefined ? makeBall(answer[i]) : makeSlot("?"));
-  }
-
-  // 履歴
-  let turnText;
-  if (over) turnText = `${log.length}回で終了`;
-  else if (mode === "cpu") turnText = phase === "set" ? "履歴" : `CPUの予想(${log.length}回目まで)`;
-  else if (mode === "versus") turnText = phase === "set" ? "あなたの予想の履歴" : `あなたの予想(${log.length}回目まで)`;
-  else turnText = `${log.length + 1} / ${MAX_TURNS} 回目`;
-  $("turn").textContent = turnText;
-
+  $("cpuWrap").hidden = mode !== "versus";
   $("play").hidden = mode === "cpu" && phase === "run";
-  $("playTitle").textContent =
-    setting ? "あなたの答えを並べてください(同じ色は使えません)" : "あなたの予想";
-  drawHistory($("history"), log);
 
-  // 対戦モード: 自分の答えとCPUの予想
-  $("cpuBox").hidden = mode !== "versus";
-  const secRow = $("secret");
-  secRow.replaceChildren();
-  for (let i = 0; i < slots; i++) secRow.append(secret[i] !== undefined ? makeBall(secret[i]) : makeSlot());
-  drawHistory($("cpuHistory"), cpuLog);
+  let title, o;
+  if (mode === "player") {
+    title = over ? `${log.length}回で終了` : `あなたの予想(${log.length + 1} / ${MAX_TURNS} 回目)`;
+    o = { rows: log, ans: answer, answerMode: over ? "show" : "cover", activeCol: over ? -1 : log.length, draft: guess };
+  } else if (mode === "cpu") {
+    title = phase === "set" ? "CPUの予想(あなたの答えが決まると始まります)" : `CPUの予想(${log.length}回目まで)`;
+    o = { rows: log, ans: answer, answerMode: setting ? "input" : "show", activeCol: phase === "run" && !over ? log.length : -1, draft: setting ? guess : [] };
+  } else {
+    const mine = phase === "play" && turn === "player" && !over;
+    title = `あなたの盤:CPUの答えを当てる(${log.length}回目まで)`;
+    o = { rows: log, ans: answer, answerMode: over ? "show" : "cover", activeCol: mine ? log.length : -1, draft: mine ? guess : [] };
+  }
+  $("mainTitle").textContent = title;
+  drawBoard($("mainBoard"), { ...o, editable: !lock });
 
-  // 今の予想(ボールを押すと外せる)
-  const gRow = $("guess");
-  gRow.replaceChildren();
-  for (let i = 0; i < slots; i++) {
-    if (i < guess.length) {
-      const b = makeBall(guess[i], "button");
-      b.title = "クリックで外す";
-      b.disabled = lock;
-      b.onclick = () => { guess.splice(i, 1); render(); };
-      gRow.append(b);
-    } else {
-      gRow.append(makeSlot());
-    }
+  if (mode === "versus") {
+    drawBoard($("cpuBoard"), {
+      rows: cpuLog, ans: secret, answerMode: setting ? "input" : "show",
+      activeCol: cpuTurn ? cpuLog.length : -1, draft: setting ? guess : [], editable: !lock,
+    });
   }
 
-  // パレット(同じ色を何回でも選べる)
+  // 色えらび
+  $("playTitle").textContent = setting ? "あなたの答えを並べてください(同じ色は使えません)" : "色をえらんで、ボールを並べよう";
   const pal = $("palette");
   pal.replaceChildren();
   for (let i = 0; i < colorCount; i++) {
@@ -173,7 +202,6 @@ function render() {
     b.onclick = () => { guess.push(i); startTimer(); render(); };
     pal.append(b);
   }
-
   $("submit").disabled = lock || guess.length !== slots;
   $("clear").disabled = lock || guess.length === 0;
 }
@@ -207,12 +235,11 @@ function timeUp() {
   stopTimer();
   over = true;
   guess = [];
-  $("message").textContent = "時間切れです。正解は上の答えでした";
+  $("message").textContent = "時間切れです。正解は右の「答え」でした";
   $("restart").hidden = false;
   render();
 }
 
-// ===== 決定 =====
 // ===== CPUモード =====
 // n色からk個を重ならないように並べた全パターン
 function permutations(n, k) {
@@ -241,8 +268,8 @@ function startCpu() {
 // 今までの結果と矛盾しない候補の中から、ランダムに1つ予想する
 function cpuStep() {
   const vs = mode === "versus";
-  const target = vs ? secret : answer; // CPUが当てる相手の答え
-  const hist = vs ? cpuLog : log;      // CPUの予想履歴
+  const target = vs ? secret : answer;
+  const hist = vs ? cpuLog : log;
   const g = candidates[Math.floor(Math.random() * candidates.length)];
   const r = judge(target, g);
   hist.push({ guess: g, hit: r.hit, blow: r.blow });
@@ -254,7 +281,6 @@ function cpuStep() {
       : `CPUは${hist.length}回で当てました`;
     $("restart").hidden = false;
   } else {
-    // 「その候補が答えだったら、同じ結果になったか」で絞り込む
     candidates = candidates.filter((c) => {
       const x = judge(c, g);
       return x.hit === r.hit && x.blow === r.blow;
@@ -280,6 +306,7 @@ function startVersus() {
   render();
 }
 
+// ===== 決定 =====
 function submit() {
   if (mode === "cpu") { startCpu(); return; }
   if (mode === "versus" && phase === "set") { startVersus(); return; }
@@ -298,7 +325,7 @@ function submit() {
     cpuTimer = setTimeout(cpuStep, CPU_DELAY);
   } else if (log.length >= MAX_TURNS) {
     over = true;
-    $("message").textContent = "ゲームオーバーです。正解は上の答えでした";
+    $("message").textContent = "ゲームオーバーです。正解は右の「答え」でした";
   }
   if (over) stopTimer();
   $("restart").hidden = !over;
