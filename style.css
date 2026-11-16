@@ -39,9 +39,6 @@ select:disabled { opacity: .45; }
 .peg { display: inline-block; width: 18px; height: 18px; margin-right: 6px; vertical-align: -3px; border: 2px solid var(--wood-ink); border-radius: 50%; }
 .peg.hit { background: var(--hit); }
 .peg.blow { background: #fff; }
-.rules { color: var(--wood-ink); font-size: .9rem; }
-.rules summary { cursor: pointer; }
-.rules p { margin: 6px 0 0; max-width: 62em; }
 h2 { margin: 0 0 6px; font-size: 1rem; color: var(--wood-ink); }
 
 .timer {
@@ -93,7 +90,11 @@ h2 { margin: 0 0 6px; font-size: 1rem; color: var(--wood-ink); }
               radial-gradient(circle at 50% 50%, transparent 58%, rgba(0,0,0,.4) 100%);
 }
 .slot { display: block; background: radial-gradient(circle at 50% 45%, #08090a 0 58%, #222528 60% 100%); box-shadow: inset 0 3px 5px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.1); }
-button.ball { cursor: pointer; }
+button.ball, button.slot { cursor: pointer; }
+button.slot { border: 0; color: inherit; }
+button.slot:disabled { cursor: default; }
+button.slot:hover:not(:disabled) { outline: 3px solid #fff; outline-offset: 2px; }
+.holes .sel { box-shadow: 0 0 0 3px #fff, 0 0 12px 3px var(--hit); }
 button.ball:disabled { opacity: .35; cursor: default; }
 button.ball:hover:not(:disabled) { outline: 3px solid #fff; outline-offset: 2px; }
 
@@ -124,12 +125,12 @@ button.ball:hover:not(:disabled) { outline: 3px solid #fff; outline-offset: 2px;
 .palette::after { right: 15px; }
 .palette .ball { width: var(--pal); height: var(--pal); }
 .actions { display: flex; justify-content: center; gap: 12px; margin-top: 16px; }
-button:not(.ball) {
+button:not(.ball):not(.slot) {
   padding: 10px 22px; font: inherit; font-weight: 900; color: #fff; cursor: pointer;
   background: var(--metal); border: 3px solid var(--rim); border-radius: 12px; box-shadow: 0 4px 0 rgba(0,0,0,.35);
 }
-button:not(.ball):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
-button:not(.ball):disabled { opacity: .45; cursor: default; }
+button:not(.ball):not(.slot):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+button:not(.ball):not(.slot):disabled { opacity: .45; cursor: default; }
 button.primary { min-width: 11em; background: #e8741a; border-color: #ffd2a1; }
 button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--hit); outline-offset: 2px; }
 
@@ -180,6 +181,8 @@ body.intro-open { overflow: hidden; }
 .rule-pal { display: grid; grid-template-columns: repeat(3, var(--ball)); gap: 8px; align-self: center; }
 .rule-step .peg { margin: 0 4px 0 0; border-color: #fff; }
 .rule-step .lg { white-space: nowrap; }
+.rule-list { margin: 0; padding-left: 1.2em; font-weight: 500; line-height: 1.8; }
+.rule-list li + li { margin-top: 6px; }
 .rule-dots { display: flex; justify-content: center; gap: 8px; margin: 14px 0 6px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #5c6167; }
 .dot.on { background: var(--hit); }

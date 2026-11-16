@@ -8,7 +8,7 @@ const slotsSelect = $("slots");
 const limitSelect = $("limit");
 const modeSelect = $("mode");
 
-let slots, colorCount, answer, guess, log, over;
+let slots, colorCount, answer, guess, sel, log, over; // sel=いま選んでいる穴の番号
 let limitSec, remaining, endAt, timerId = null;
 let secret, cpuLog, turn;            // 対戦モード用
 let mode, phase, candidates, cpuTimer; // phase: "set"=自分の答えを決める / "run"=CPUが予想中 / "play"=対戦中
@@ -64,7 +64,7 @@ function newGame() {
   document.documentElement.style.setProperty("--ball", size + "px");
 
   answer = cpu ? [] : shuffle([...Array(colorCount).keys()]).slice(0, slots);
-  guess = [];
+  guess = emptyGuess(); sel = 0;
   log = [];
   cpuLog = [];
   secret = [];
@@ -108,8 +108,8 @@ function drawBoard(el, o) {
       keys.append(key);
       if (r) {
         holes.append(makeBall(r.guess[k]));
-      } else if (i === o.activeCol && k < o.draft.length) {
-        holes.append(removable(o.draft[k], k, o.editable));
+      } else if (i === o.activeCol) {
+        holes.append(holeBtn(k, o.draft[k], o.editable));
       } else {
         holes.append(makeSlot());
       }
@@ -133,7 +133,7 @@ function drawBoard(el, o) {
     holes.textContent = "?";
   } else {
     for (let k = 0; k < slots; k++) {
-      if (o.answerMode === "input" && k < o.draft.length) holes.append(removable(o.draft[k], k, o.editable));
+      if (o.answerMode === "input") holes.append(holeBtn(k, o.draft[k], o.editable));
       else if (o.answerMode === "show" && o.ans[k] !== undefined) holes.append(makeBall(o.ans[k]));
       else holes.append(makeSlot());
     }
@@ -153,13 +153,52 @@ function drawBoard(el, o) {
   }
 }
 
-// 入れたボール(クリックで外せる)
-function removable(index, k, editable) {
-  const b = makeBall(index, "button");
-  b.title = "クリックで外す";
+// ===== 予想の入力(穴を選んで、その場所だけ入れ替えられる) =====
+function emptyGuess() { return Array(slots).fill(null); }
+
+function nextEmpty(from) {
+  for (let d = 1; d <= slots; d++) {
+    const k = (from + d) % slots;
+    if (guess[k] === null) return k;
+  }
+  return -1;
+}
+
+// 色をえらんだ時: 選んでいる穴に入れて、次の空き穴へ進む(全部埋まっていれば、その穴のまま)
+function placeColor(i) {
+  const k = sel >= 0 && sel < slots ? sel : guess.indexOf(null);
+  if (k < 0) return;
+  guess[k] = i;
+  const next = nextEmpty(k);
+  sel = next >= 0 ? next : k;
+  startTimer();
+  render();
+}
+
+// 穴(ボール or 空き)。1回クリックで選ぶ / 選んでいるボールをもう1回クリックで外す
+function holeBtn(k, c, editable) {
+  let b;
+  if (c === null) {
+    b = document.createElement("button");
+    b.type = "button";
+    b.className = "slot";
+    b.setAttribute("aria-label", "空きの穴");
+  } else {
+    b = makeBall(c, "button");
+  }
+  if (editable && k === sel) b.classList.add("sel");
   b.disabled = !editable;
-  b.onclick = () => { guess.splice(k, 1); render(); };
+  b.title = c === null ? "ここに入れる" : k === sel ? "もう一度クリックで外す" : "クリックで場所を選ぶ";
+  b.onclick = () => {
+    if (c !== null && k === sel) guess[k] = null;
+    else sel = k;
+    render();
+  };
   return b;
+}
+
+function removeSelected() {
+  if (sel >= 0 && guess[sel] !== null) { guess[sel] = null; render(); }
 }
 
 function render() {
@@ -193,17 +232,18 @@ function render() {
   }
 
   // 色えらび
-  $("playTitle").textContent = setting ? "あなたの答えを並べてください(同じ色は使えません)" : "色をえらんで、ボールを並べよう";
+  $("playTitle").textContent = setting ? "あなたの答えを並べてください(同じ色は使えません)" : "色をえらんで、ボールを並べよう(穴をクリックすると、その場所だけ変えられます)";
   const pal = $("palette");
   pal.replaceChildren();
   for (let i = 0; i < colorCount; i++) {
     const b = makeBall(i, "button");
-    b.disabled = lock || guess.length >= slots || (setting && guess.includes(i));
-    b.onclick = () => { guess.push(i); startTimer(); render(); };
+    // 答えを決める時は同じ色を使えない(いま選んでいる穴の色と同じなら、入れ替えはOK)
+    b.disabled = lock || (setting && guess.includes(i) && guess[sel] !== i);
+    b.onclick = () => placeColor(i);
     pal.append(b);
   }
-  $("submit").disabled = lock || guess.length !== slots;
-  $("clear").disabled = lock || guess.length === 0;
+  $("submit").disabled = lock || guess.includes(null);
+  $("clear").disabled = lock || guess.every((c) => c === null);
 }
 
 // ===== 制限時間 =====
@@ -234,7 +274,7 @@ function stopTimer() {
 function timeUp() {
   stopTimer();
   over = true;
-  guess = [];
+  guess = emptyGuess(); sel = 0;
   $("message").textContent = "時間切れです。正解は右の「答え」でした";
   $("restart").hidden = false;
   render();
@@ -258,7 +298,7 @@ function permutations(n, k) {
 
 function startCpu() {
   answer = [...guess];
-  guess = [];
+  guess = emptyGuess(); sel = 0;
   phase = "run";
   candidates = permutations(colorCount, slots);
   render();
@@ -298,7 +338,7 @@ function cpuStep() {
 // 対戦モード: 自分の答えが決まったので開始(自分が先攻)
 function startVersus() {
   secret = [...guess];
-  guess = [];
+  guess = emptyGuess(); sel = 0;
   phase = "play";
   turn = "player";
   candidates = permutations(colorCount, slots);
@@ -312,7 +352,7 @@ function submit() {
   if (mode === "versus" && phase === "set") { startVersus(); return; }
   const { hit, blow } = judge(answer, guess);
   log.push({ guess: [...guess], hit, blow });
-  guess = [];
+  guess = emptyGuess(); sel = 0;
 
   if (hit === slots) {
     over = true;
@@ -333,7 +373,7 @@ function submit() {
 }
 
 $("submit").onclick = submit;
-$("clear").onclick = () => { guess = []; render(); };
+$("clear").onclick = () => { guess = emptyGuess(); sel = 0; render(); };
 $("restart").onclick = newGame;
 slotsSelect.onchange = newGame;
 limitSelect.onchange = newGame;
@@ -414,7 +454,13 @@ $("rulePrev").onclick = () => showRule(Number(intro.dataset.step) - 1);
 $("ruleNext").onclick = nextRule;
 $("helpBtn").onclick = () => openIntro("rules");
 document.addEventListener("keydown", (e) => {
-  if (introStage === "closed") return;
+  // ゲーム中: Delete / Backspace で、選んでいるボールを外す
+  if (introStage === "closed") {
+    const t = e.target.tagName;
+    const locked = over || (mode === "versus" && phase === "play" && turn === "cpu");
+    if ((e.key === "Delete" || e.key === "Backspace") && t !== "SELECT" && t !== "INPUT" && !locked) removeSelected();
+    return;
+  }
   if (e.key === "Escape") closeIntro();
   else if (introStage === "rules" && e.key === "ArrowRight") nextRule();
   else if (introStage === "rules" && e.key === "ArrowLeft" && Number(intro.dataset.step) > 0) showRule(Number(intro.dataset.step) - 1);
