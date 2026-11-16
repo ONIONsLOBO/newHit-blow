@@ -17,7 +17,6 @@
       <label class="mode">モード
         <select id="mode">
           <option value="player" selected>自分が当てる</option>
-          <option value="cpu">CPUが当てる</option>
           <option value="versus">交互に対戦</option>
         </select>
       </label>
@@ -47,7 +46,7 @@
           <option value="10">10分</option>
         </select>
       </label>
-      <button type="button" id="helpBtn" class="help">遊び方</button>
+      <button type="button" id="menuBtn" class="help">メニュー</button>
     </header>
 
     <p class="legend">
@@ -104,6 +103,7 @@
     <div id="introRules" class="intro-rules" hidden>
       <div class="rules-card">
         <button type="button" id="ruleClose" class="rule-close" aria-label="とじる">×</button>
+        <button type="button" class="menu-back" data-go="menu">← メニュー</button>
 
         <section class="rule-step">
           <h3>1. 答えは、かくれた色の並び</h3>
@@ -140,9 +140,8 @@
           <h3>4. モードと設定</h3>
           <ul class="rule-list">
             <li><b>自分が当てる</b>:コンピュータが決めた答えを当てます。</li>
-            <li><b>CPUが当てる</b>:自分で答えを決めて、CPUに当ててもらいます。</li>
             <li><b>交互に対戦</b>:あなたとCPUが1回ずつ交代で相手の答えを予想し、先に当てた方の勝ちです(あなたが先攻)。</li>
-            <li>ボールの数は4〜10個です(CPUが関わるモードは8個まで)。7個以上のときは、色もボールの数と同じだけ使います。</li>
+            <li>ボールの数は4〜10個です(交互に対戦は8個まで)。7個以上のときは、色もボールの数と同じだけ使います。</li>
             <li>制限時間は、「自分が当てる」で1〜10分から選べます。</li>
           </ul>
         </section>
@@ -153,6 +152,28 @@
           <button type="button" id="rulePrev" hidden>戻る</button>
           <button type="button" id="ruleNext" class="primary">次へ</button>
         </div>
+      </div>
+    </div>
+
+    <!-- メニュー(項目を足したい時は、ここに <li> を1つ増やす) -->
+    <div id="introMenu" class="intro-rules" hidden>
+      <div class="rules-card">
+        <button type="button" class="rule-close" aria-label="とじる">×</button>
+        <h3>メニュー</h3>
+        <ul class="menu-list">
+          <li><button type="button" data-go="rules">遊び方</button></li>
+          <li><button type="button" data-go="tips">コツ</button></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- コツ(中身は script.js の TIPS に書いてあります) -->
+    <div id="introTips" class="intro-rules" hidden>
+      <div class="rules-card">
+        <button type="button" class="rule-close" aria-label="とじる">×</button>
+        <button type="button" class="menu-back" data-go="menu">← メニュー</button>
+        <h3>コツ</h3>
+        <ol class="tips-list" id="tipsList"></ol>
       </div>
     </div>
   </div>

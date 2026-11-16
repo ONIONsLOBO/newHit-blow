@@ -11,7 +11,7 @@ const modeSelect = $("mode");
 let slots, colorCount, answer, guess, sel, log, over; // sel=いま選んでいる穴の番号
 let limitSec, remaining, endAt, timerId = null;
 let secret, cpuLog, turn;            // 対戦モード用
-let mode, phase, candidates, cpuTimer; // phase: "set"=自分の答えを決める / "run"=CPUが予想中 / "play"=対戦中
+let mode, phase, candidates, cpuTimer; // mode: "player"=自分が当てる / "versus"=交互に対戦。phase(対戦): "set"=自分の答えを決める / "play"=対戦中
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -49,8 +49,7 @@ function judge(ans, g) {
 
 function newGame() {
   mode = modeSelect.value;
-  const cpu = mode === "cpu";
-  const multi = mode !== "player"; // CPUが予想するモード(CPU・対戦)
+  const multi = mode !== "player"; // CPUと対戦するモード
   // CPUは候補を全部数え上げるので、ボールは8個まで
   [...slotsSelect.options].forEach((o) => { o.disabled = multi && Number(o.value) > 8; });
   if (multi && Number(slotsSelect.value) > 8) slotsSelect.value = "8";
@@ -63,7 +62,7 @@ function newGame() {
   const size = slots <= 6 ? 42 : slots <= 8 ? 36 : 30;
   document.documentElement.style.setProperty("--ball", size + "px");
 
-  answer = cpu ? [] : shuffle([...Array(colorCount).keys()]).slice(0, slots);
+  answer = shuffle([...Array(colorCount).keys()]).slice(0, slots);
   guess = emptyGuess(); sel = 0;
   log = [];
   cpuLog = [];
@@ -204,18 +203,14 @@ function removeSelected() {
 function render() {
   const cpuTurn = mode === "versus" && phase === "play" && turn === "cpu";
   const lock = over || cpuTurn;
-  const setting = (mode === "cpu" || mode === "versus") && phase === "set"; // 自分の答えを決める場面
+  const setting = mode === "versus" && phase === "set"; // 自分の答えを決める場面
 
   $("cpuWrap").hidden = mode !== "versus";
-  $("play").hidden = mode === "cpu" && phase === "run";
 
   let title, o;
   if (mode === "player") {
     title = over ? `${log.length}回で終了` : `あなたの予想(${log.length + 1} / ${MAX_TURNS} 回目)`;
     o = { rows: log, ans: answer, answerMode: over ? "show" : "cover", activeCol: over ? -1 : log.length, draft: guess };
-  } else if (mode === "cpu") {
-    title = phase === "set" ? "CPUの予想(あなたの答えが決まると始まります)" : `CPUの予想(${log.length}回目まで)`;
-    o = { rows: log, ans: answer, answerMode: setting ? "input" : "show", activeCol: phase === "run" && !over ? log.length : -1, draft: setting ? guess : [] };
   } else {
     const mine = phase === "play" && turn === "player" && !over;
     title = `あなたの盤:CPUの答えを当てる(${log.length}回目まで)`;
@@ -296,41 +291,23 @@ function permutations(n, k) {
   return out;
 }
 
-function startCpu() {
-  answer = [...guess];
-  guess = emptyGuess(); sel = 0;
-  phase = "run";
-  candidates = permutations(colorCount, slots);
-  render();
-  cpuTimer = setTimeout(cpuStep, CPU_DELAY);
-}
-
-// 今までの結果と矛盾しない候補の中から、ランダムに1つ予想する
+// CPUの1手: 今までの結果と矛盾しない候補の中から、ランダムに1つ予想する
 function cpuStep() {
-  const vs = mode === "versus";
-  const target = vs ? secret : answer;
-  const hist = vs ? cpuLog : log;
   const g = candidates[Math.floor(Math.random() * candidates.length)];
-  const r = judge(target, g);
-  hist.push({ guess: g, hit: r.hit, blow: r.blow });
+  const r = judge(secret, g);
+  cpuLog.push({ guess: g, hit: r.hit, blow: r.blow });
 
   if (r.hit === slots) {
     over = true;
-    $("message").textContent = vs
-      ? `CPUの勝ちです(CPUは${hist.length}回で当てました)`
-      : `CPUは${hist.length}回で当てました`;
+    $("message").textContent = `CPUの勝ちです(CPUは${cpuLog.length}回で当てました)`;
     $("restart").hidden = false;
   } else {
     candidates = candidates.filter((c) => {
       const x = judge(c, g);
       return x.hit === r.hit && x.blow === r.blow;
     });
-    if (vs) {
-      turn = "player";
-      $("message").textContent = "あなたの番です";
-    } else {
-      cpuTimer = setTimeout(cpuStep, CPU_DELAY);
-    }
+    turn = "player";
+    $("message").textContent = "あなたの番です";
   }
   render();
 }
@@ -348,7 +325,6 @@ function startVersus() {
 
 // ===== 決定 =====
 function submit() {
-  if (mode === "cpu") { startCpu(); return; }
   if (mode === "versus" && phase === "set") { startVersus(); return; }
   const { hit, blow } = judge(answer, guess);
   log.push({ guess: [...guess], hit, blow });
@@ -384,7 +360,27 @@ modeSelect.onchange = newGame;
 const SKIP_KEY = "hb_skip_rules";
 const intro = $("intro");
 const ruleSteps = document.querySelectorAll(".rule-step");
-let introStage = "closed"; // "title"=オープニング / "rules"=ルール説明 / "closed"
+let introStage = "closed"; // "title"=オープニング / "rules"=ルール説明 / "menu"=メニュー / "tips"=コツ / "closed"
+const STAGES = { title: "introTitle", rules: "introRules", menu: "introMenu", tips: "introTips" };
+
+// ===== コツ(ここに1行足すと、メニューの「コツ」に増えます。番号は tips01 から自動でつきます) =====
+const TIPS = [
+  "４色の把握→配置を当てる　という順番で基本攻略したい",
+  "４色の把握は４手以内に絶対出来る！！",
+  "序盤の予想は２色だけにするとやりやすい",
+  "２色で予想する時は３＋１にするとやりやすい？？\n例)赤赤赤青で予想して２Hitなら、青の位置が確定する",
+  "０Hitは逆にチャンス！\n全ての位置が違うので、配置を当てるときの消去法で役立つ",
+];
+TIPS.forEach((text, i) => {
+  const li = document.createElement("li");
+  const no = document.createElement("b");
+  no.className = "tip-no";
+  no.textContent = "tips" + String(i + 1).padStart(2, "0");
+  const p = document.createElement("p");
+  p.textContent = text; // 改行(\n)はそのまま表示される
+  li.append(no, p);
+  $("tipsList").append(li);
+});
 let introTimer = null, hideTimer = null;
 
 function skipSaved() { try { return localStorage.getItem(SKIP_KEY) === "1"; } catch (e) { return false; } }
@@ -401,10 +397,10 @@ function openIntro(stage) {
 }
 
 function showStage(stage) {
+  if (introStage === "rules" && stage !== "rules") saveSkip($("ruleSkip").checked); // ルールから出る時も「表示しない」を保存
   introStage = stage;
   clearTimeout(introTimer);
-  $("introTitle").hidden = stage !== "title";
-  $("introRules").hidden = stage !== "rules";
+  for (const [name, id] of Object.entries(STAGES)) $(id).hidden = name !== stage;
   if (stage === "title") {
     const t = $("introTitle");
     t.classList.remove("play");
@@ -412,11 +408,14 @@ function showStage(stage) {
     t.classList.add("play");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     introTimer = setTimeout(afterTitle, reduce ? 1200 : 3700);
-  } else {
+  } else if (stage === "rules") {
     $("ruleSkip").checked = skipSaved();
     showRule(0);
     $("ruleNext").focus();
+  } else {
+    $(STAGES[stage]).querySelector("button[data-go], .rule-close").focus();
   }
+  intro.scrollTop = 0;
 }
 
 function afterTitle() {
@@ -449,10 +448,11 @@ function closeIntro() {
 }
 
 $("introTitle").onclick = afterTitle;
-$("ruleClose").onclick = closeIntro;
+document.querySelectorAll(".rule-close").forEach((b) => { b.onclick = closeIntro; });
+document.querySelectorAll("[data-go]").forEach((b) => { b.onclick = () => showStage(b.dataset.go); });
 $("rulePrev").onclick = () => showRule(Number(intro.dataset.step) - 1);
 $("ruleNext").onclick = nextRule;
-$("helpBtn").onclick = () => openIntro("rules");
+$("menuBtn").onclick = () => openIntro("menu");
 document.addEventListener("keydown", (e) => {
   // ゲーム中: Delete / Backspace で、選んでいるボールを外す
   if (introStage === "closed") {
