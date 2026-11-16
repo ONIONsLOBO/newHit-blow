@@ -47,6 +47,7 @@
           <option value="10">10分</option>
         </select>
       </label>
+      <button type="button" id="helpBtn" class="help">遊び方</button>
     </header>
 
     <p class="legend">
@@ -82,6 +83,72 @@
 
     <p id="message" class="message"></p>
     <button type="button" id="restart" class="primary" hidden>もう一度あそぶ</button>
+  </div>
+
+  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-label="ヒット&amp;ブロー" tabindex="-1" hidden>
+    <!-- オープニング -->
+    <div id="introTitle" class="intro-title">
+      <button type="button" id="introSkip" class="intro-skip">スキップ</button>
+      <div class="intro-unit" aria-hidden="true">
+        <div class="keys" style="--kc:2">
+          <span class="key hit" style="--d:2.1s"></span><span class="key hit" style="--d:2.3s"></span>
+          <span class="key blow" style="--d:2.5s"></span><span class="key"></span>
+        </div>
+        <div class="holes">
+          <span class="cell"><span class="slot"></span><span class="ball c0 fall" style="--i:0"></span></span>
+          <span class="cell"><span class="slot"></span><span class="ball c1 fall" style="--i:1"></span></span>
+          <span class="cell"><span class="slot"></span><span class="ball c2 fall" style="--i:2"></span></span>
+          <span class="cell"><span class="slot"></span><span class="ball c3 fall" style="--i:3"></span></span>
+        </div>
+      </div>
+      <p class="intro-logo"><span class="h">ヒット</span>&amp;<span class="b">ブロー</span><span class="bang">!</span></p>
+      <p class="intro-hint">タップでスキップ</p>
+    </div>
+
+    <!-- ルール説明 -->
+    <div id="introRules" class="intro-rules" hidden>
+      <div class="rules-card">
+        <button type="button" id="ruleClose" class="rule-close" aria-label="とじる">×</button>
+
+        <section class="rule-step">
+          <h3>1. 答えは、かくれた色の並び</h3>
+          <div class="rule-fig" style="--n:4">
+            <div class="holes cover">?</div>
+            <div class="rule-pal"><span class="ball c0"></span><span class="ball c1"></span><span class="ball c2"></span><span class="ball c3"></span><span class="ball c4"></span><span class="ball c5"></span></div>
+          </div>
+          <p>右のような色のボールから4つを選んで並べたものが「答え」で、円柱のカバーの中にかくれています。答えには、同じ色は1回しか使われません。これを当てるゲームです。</p>
+        </section>
+
+        <section class="rule-step" hidden>
+          <h3>2. 色をえらんで、予想する</h3>
+          <div class="rule-fig">
+            <div class="col active"><div class="holes"><span class="ball c0"></span><span class="ball c2"></span><span class="ball c1"></span><span class="ball c5"></span></div></div>
+          </div>
+          <p>下の色をえらぶと、光っている列に上から順にボールが入ります。4つ並べたら「これで決定」。入れたボールをクリックすると外せます。予想では、同じ色を何回使ってもOKです。10回以内に当てましょう。</p>
+        </section>
+
+        <section class="rule-step" hidden>
+          <h3>3. ヒットとブローを見る</h3>
+          <div class="rule-fig">
+            <div class="col"><div class="num">答え</div><div class="keys blank" style="--kc:2"><span class="key"></span><span class="key"></span><span class="key"></span><span class="key"></span></div><div class="holes"><span class="ball c0"></span><span class="ball c1"></span><span class="ball c2"></span><span class="ball c3"></span></div></div>
+            <div class="col">
+              <div class="num">予想</div>
+              <div class="keys" style="--kc:2"><span class="key hit"></span><span class="key blow"></span><span class="key blow"></span><span class="key"></span></div>
+              <div class="holes"><span class="ball c0"></span><span class="ball c2"></span><span class="ball c1"></span><span class="ball c5"></span></div>
+            </div>
+          </div>
+          <p><span class="lg"><i class="peg hit"></i><b>ヒット</b>:色も場所も合っている</span><br><span class="lg"><i class="peg blow"></i><b>ブロー</b>:色だけ合っている</span><br>
+            上の例では、1番目の青がヒット、赤と緑がブロー、白は答えにないのではずれです。結果は、予想した列の上の小さな穴に出ます。</p>
+        </section>
+
+        <div class="rule-dots" aria-hidden="true"><i class="dot on"></i><i class="dot"></i><i class="dot"></i></div>
+        <label class="rule-skip"><input type="checkbox" id="ruleSkip"> 次回から説明を表示しない</label>
+        <div class="rule-nav">
+          <button type="button" id="rulePrev" hidden>戻る</button>
+          <button type="button" id="ruleNext" class="primary">次へ</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script src="script.js"></script>
 </body>

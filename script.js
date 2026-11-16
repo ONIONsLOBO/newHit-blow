@@ -339,4 +339,86 @@ slotsSelect.onchange = newGame;
 limitSelect.onchange = newGame;
 modeSelect.onchange = newGame;
 
+// ===== オープニング と ルール説明 =====
+// 「次回から説明を表示しない」は、このブラウザの localStorage に覚えておく
+const SKIP_KEY = "hb_skip_rules";
+const intro = $("intro");
+const ruleSteps = document.querySelectorAll(".rule-step");
+let introStage = "closed"; // "title"=オープニング / "rules"=ルール説明 / "closed"
+let introTimer = null, hideTimer = null;
+
+function skipSaved() { try { return localStorage.getItem(SKIP_KEY) === "1"; } catch (e) { return false; } }
+function saveSkip(on) { try { on ? localStorage.setItem(SKIP_KEY, "1") : localStorage.removeItem(SKIP_KEY); } catch (e) {} }
+
+function openIntro(stage) {
+  clearTimeout(hideTimer);
+  intro.hidden = false;
+  intro.classList.remove("out");
+  document.body.classList.add("intro-open");
+  document.querySelector(".page").inert = true; // 裏のゲームは触れないように
+  showStage(stage);
+  intro.focus();
+}
+
+function showStage(stage) {
+  introStage = stage;
+  clearTimeout(introTimer);
+  $("introTitle").hidden = stage !== "title";
+  $("introRules").hidden = stage !== "rules";
+  if (stage === "title") {
+    const t = $("introTitle");
+    t.classList.remove("play");
+    void t.offsetWidth; // アニメーションを最初からやり直す
+    t.classList.add("play");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    introTimer = setTimeout(afterTitle, reduce ? 1200 : 3700);
+  } else {
+    $("ruleSkip").checked = skipSaved();
+    showRule(0);
+    $("ruleNext").focus();
+  }
+}
+
+function afterTitle() {
+  if (introStage !== "title") return;
+  if (skipSaved()) closeIntro(); else showStage("rules");
+}
+
+function showRule(i) {
+  ruleSteps.forEach((el, k) => { el.hidden = k !== i; });
+  document.querySelectorAll(".dot").forEach((d, k) => d.classList.toggle("on", k === i));
+  $("rulePrev").hidden = i === 0;
+  $("ruleNext").textContent = i === ruleSteps.length - 1 ? "はじめる" : "次へ";
+  intro.dataset.step = i;
+}
+
+function nextRule() {
+  const i = Number(intro.dataset.step);
+  if (i >= ruleSteps.length - 1) closeIntro(); else showRule(i + 1);
+}
+
+function closeIntro() {
+  if (introStage === "closed") return;
+  clearTimeout(introTimer);
+  if (introStage === "rules") saveSkip($("ruleSkip").checked);
+  introStage = "closed";
+  intro.classList.add("out");
+  document.body.classList.remove("intro-open");
+  document.querySelector(".page").inert = false;
+  hideTimer = setTimeout(() => { intro.hidden = true; }, 400);
+}
+
+$("introTitle").onclick = afterTitle;
+$("ruleClose").onclick = closeIntro;
+$("rulePrev").onclick = () => showRule(Number(intro.dataset.step) - 1);
+$("ruleNext").onclick = nextRule;
+$("helpBtn").onclick = () => openIntro("rules");
+document.addEventListener("keydown", (e) => {
+  if (introStage === "closed") return;
+  if (e.key === "Escape") closeIntro();
+  else if (introStage === "rules" && e.key === "ArrowRight") nextRule();
+  else if (introStage === "rules" && e.key === "ArrowLeft" && Number(intro.dataset.step) > 0) showRule(Number(intro.dataset.step) - 1);
+});
+
 newGame();
+openIntro("title");
