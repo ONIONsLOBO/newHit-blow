@@ -185,12 +185,10 @@ body.intro-open { overflow: hidden; }
 .rules-card h3 { margin: 0 0 12px; padding-right: 2.5em; font-size: 1.2rem; }
 .rules-card .menu-back { margin-bottom: 12px; padding: 2px 12px; font-size: .85rem; }
 .intro[data-from="opening"] #introRules .menu-back { display: none; } /* 最初の説明(オープニングの後)では「← メニュー」を出さない */
-.menu-list, .tips-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.menu-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .menu-list button { width: 100%; padding: 14px 18px; text-align: left; font-size: 1.05rem; }
 .menu-list button::after { content: "›"; float: right; }
-.tips-list li { padding: 10px 14px; background: #2a2d30; border-radius: 12px; }
-.tip-no { color: var(--hit); font-size: .85rem; letter-spacing: .05em; }
-.tips-list p { margin: 2px 0 0; font-weight: 500; line-height: 1.7; white-space: pre-line; }
+.tip-body { margin: 0; padding: 14px 16px; background: #2a2d30; border-radius: 12px; font-weight: 500; line-height: 1.9; white-space: pre-line; }
 .rule-dots { display: flex; justify-content: center; gap: 8px; margin: 14px 0 6px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #5c6167; }
 .dot.on { background: var(--hit); }

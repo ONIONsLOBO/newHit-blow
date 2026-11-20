@@ -360,10 +360,10 @@ modeSelect.onchange = newGame;
 const SKIP_KEY = "hb_skip_rules";
 const intro = $("intro");
 const ruleSteps = document.querySelectorAll(".rule-step");
-let introStage = "closed"; // "title"=オープニング / "rules"=ルール説明 / "menu"=メニュー / "tips"=コツ / "closed"
-const STAGES = { title: "introTitle", rules: "introRules", menu: "introMenu", tips: "introTips" };
+let introStage = "closed"; // "title"=オープニング / "rules"=ルール説明 / "menu"=メニュー / "tips"=コツ一覧 / "tip"=コツの中身 / "closed"
+const STAGES = { title: "introTitle", rules: "introRules", menu: "introMenu", tips: "introTips", tip: "introTip" };
 
-// ===== コツ(ここに1行足すと、メニューの「コツ」に増えます。番号は tips01 から自動でつきます) =====
+// ===== コツ(ここに1行足すと、メニューの「コツ」に「コツ➊」「コツ➋」…のボタンが増えます) =====
 const TIPS = [
   "４色の把握→配置を当てる　という順番で基本攻略したい",
   "４色の把握は４手以内に絶対出来る！！",
@@ -371,14 +371,19 @@ const TIPS = [
   "２色で予想する時は３＋１にするとやりやすい？？\n例)赤赤赤青で予想して２Hitなら、青の位置が確定する",
   "０Hitは逆にチャンス！\n全ての位置が違うので、配置を当てるときの消去法で役立つ",
 ];
+const tipLabel = (i) => "コツ" + (i < 10 ? "➊➋➌➍➎➏➐➑➒➓"[i] : i + 1);
+
 TIPS.forEach((text, i) => {
   const li = document.createElement("li");
-  const no = document.createElement("b");
-  no.className = "tip-no";
-  no.textContent = "tips" + String(i + 1).padStart(2, "0");
-  const p = document.createElement("p");
-  p.textContent = text; // 改行(\n)はそのまま表示される
-  li.append(no, p);
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = tipLabel(i);
+  btn.onclick = () => {
+    $("tipTitle").textContent = tipLabel(i);
+    $("tipBody").textContent = text; // 改行(\n)はそのまま表示される
+    showStage("tip");
+  };
+  li.append(btn);
   $("tipsList").append(li);
 });
 let introTimer = null, hideTimer = null;

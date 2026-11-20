@@ -166,13 +166,23 @@
       </div>
     </div>
 
-    <!-- コツ(中身は script.js の TIPS に書いてあります) -->
+    <!-- コツ一覧(ボタンは script.js の TIPS から自動で作られます) -->
     <div id="introTips" class="intro-rules" hidden>
       <div class="rules-card">
         <button type="button" class="rule-close" aria-label="とじる">×</button>
         <button type="button" class="menu-back" data-go="menu">← メニュー</button>
         <h3>コツ</h3>
-        <ol class="tips-list" id="tipsList"></ol>
+        <ul class="menu-list" id="tipsList"></ul>
+      </div>
+    </div>
+
+    <!-- コツの中身 -->
+    <div id="introTip" class="intro-rules" hidden>
+      <div class="rules-card">
+        <button type="button" class="rule-close" aria-label="とじる">×</button>
+        <button type="button" class="menu-back" data-go="tips">← コツ一覧</button>
+        <h3 id="tipTitle"></h3>
+        <p class="tip-body" id="tipBody"></p>
       </div>
     </div>
   </div>
