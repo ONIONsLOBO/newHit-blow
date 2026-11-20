@@ -48,6 +48,21 @@ function judge(ans, g) {
   return { hit, blow: common - hit };
 }
 
+// 最難関の設定(制限時間30秒・5ターン・ボール10個)を選んでいる時は、選択欄を赤くして「最難関」の表示を出す
+function updateHard() {
+  const found = [];
+  const check = (select, isHard, label) => {
+    const on = !select.disabled && isHard(select.value); // 使われない設定(対戦の制限時間など)は数えない
+    select.classList.toggle("hard", on);
+    if (on) found.push(label);
+  };
+  check(limitSelect, (v) => v === "30", "制限時間30秒");
+  check(turnsSelect, (v) => v === "5", "5ターン");
+  check(slotsSelect, (v) => v === "10", "ボール10個");
+  $("hardBadge").hidden = found.length === 0;
+  $("hardBadge").textContent = "最難関 ― " + found.join(" / ");
+}
+
 function newGame() {
   MAX_TURNS = Number(turnsSelect.value);
   mode = modeSelect.value;
@@ -56,6 +71,7 @@ function newGame() {
   [...slotsSelect.options].forEach((o) => { o.disabled = multi && Number(o.value) > 8; });
   if (multi && Number(slotsSelect.value) > 8) slotsSelect.value = "8";
   limitSelect.disabled = multi;
+  updateHard();
   clearTimeout(cpuTimer);
   phase = "set";
 
@@ -73,7 +89,7 @@ function newGame() {
   over = false;
 
   stopTimer();
-  limitSec = multi ? 0 : Number(limitSelect.value) * 60;
+  limitSec = multi ? 0 : Number(limitSelect.value); // 選択肢の値は「秒」
   remaining = limitSec;
   $("timer").hidden = !limitSec;
   showTimer();
@@ -437,9 +453,12 @@ function afterTitle() {
 }
 
 function showRule(i) {
-  ruleSteps.forEach((el, k) => { el.hidden = k !== i; });
+  ruleSteps.forEach((el, k) => {
+    el.classList.toggle("on", k === i);
+    el.setAttribute("aria-hidden", String(k !== i));
+  });
   document.querySelectorAll(".dot").forEach((d, k) => d.classList.toggle("on", k === i));
-  $("rulePrev").hidden = i === 0;
+  $("rulePrev").disabled = i === 0; // 見えなくするだけで場所は残す(「次へ」が動かないように)
   $("ruleNext").textContent = i === ruleSteps.length - 1 ? "はじめる" : "次へ";
   intro.dataset.step = i;
 }

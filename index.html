@@ -28,12 +28,12 @@
           <option value="7">7個</option>
           <option value="8">8個</option>
           <option value="9">9個</option>
-          <option value="10">10個</option>
+          <option value="10" class="hard">10個【最難関】</option>
         </select>
       </label>
       <label class="mode">ターン数
         <select id="turns">
-          <option value="5">5回</option>
+          <option value="5" class="hard">5回【最難関】</option>
           <option value="6">6回</option>
           <option value="7">7回</option>
           <option value="8">8回</option>
@@ -49,16 +49,10 @@
       <label class="mode">制限時間
         <select id="limit">
           <option value="0" selected>なし</option>
-          <option value="1">1分</option>
-          <option value="2">2分</option>
-          <option value="3">3分</option>
-          <option value="4">4分</option>
-          <option value="5">5分</option>
-          <option value="6">6分</option>
-          <option value="7">7分</option>
-          <option value="8">8分</option>
-          <option value="9">9分</option>
-          <option value="10">10分</option>
+          <option value="30" class="hard">30秒【最難関】</option>
+          <option value="60">1分</option>
+          <option value="120">2分</option>
+          <option value="180">3分</option>
         </select>
       </label>
       <button type="button" id="menuBtn" class="help">メニュー</button>
@@ -70,6 +64,7 @@
     </p>
 
     <p id="timer" class="timer" role="timer" hidden></p>
+    <p id="hardBadge" class="hard-badge" role="status" hidden></p>
 
     <section class="boardwrap">
       <h2 id="mainTitle"></h2>
@@ -119,7 +114,8 @@
         <button type="button" id="ruleClose" class="rule-close" aria-label="とじる">×</button>
         <button type="button" class="menu-back" data-go="menu">← メニュー</button>
 
-        <section class="rule-step">
+        <div class="rule-steps">
+        <section class="rule-step on">
           <h3>1. 答えは、かくれた色の並び</h3>
           <div class="rule-fig" style="--n:4">
             <div class="holes cover">?</div>
@@ -128,7 +124,7 @@
           <p>右のような色のボールから4つを選んで並べたものが「答え」で、円柱のカバーの中にかくれています。答えには、同じ色は1回しか使われません。これを当てるゲームです。</p>
         </section>
 
-        <section class="rule-step" hidden>
+        <section class="rule-step">
           <h3>2. 色をえらんで、予想する</h3>
           <div class="rule-fig">
             <div class="col active"><div class="holes"><span class="ball c0"></span><span class="ball c2"></span><span class="ball c1"></span><span class="ball c5"></span></div></div>
@@ -136,7 +132,7 @@
           <p>下の色をえらぶと、光っている列に上から順にボールが入ります。入れたい場所(穴)を先にクリックして選ぶと、その場所だけを入れ替えられます。選んでいるボールをもう一度クリックすると外れます。4つ並べたら「これで決定」。予想では、同じ色を何回使ってもOKです。決まったターン数以内に当てましょう(ターン数は画面上部の設定で変えられます)。</p>
         </section>
 
-        <section class="rule-step" hidden>
+        <section class="rule-step">
           <h3>3. ヒットとブローを見る</h3>
           <div class="rule-fig">
             <div class="col"><div class="num">答え</div><div class="keys blank" style="--kc:2"><span class="key"></span><span class="key"></span><span class="key"></span><span class="key"></span></div><div class="holes"><span class="ball c0"></span><span class="ball c1"></span><span class="ball c2"></span><span class="ball c3"></span></div></div>
@@ -150,21 +146,24 @@
             上の例では、1番目の青がヒット、赤と緑がブロー、白は答えにないのではずれです。結果は、予想した列の上の小さな穴に出ます。</p>
         </section>
 
-        <section class="rule-step" hidden>
+        <section class="rule-step">
           <h3>4. モードと設定</h3>
           <ul class="rule-list">
             <li><b>自分が当てる</b>:コンピュータが決めた答えを当てます。</li>
             <li><b>交互に対戦</b>:あなたとCPUが1回ずつ交代で相手の答えを予想し、先に当てた方の勝ちです(あなたが先攻)。</li>
             <li>ボールの数は4〜10個です(交互に対戦は8個まで)。7個以上のときは、色もボールの数と同じだけ使います。</li>
             <li>ターン数は5〜15回から選べます(初期設定は10回)。「交互に対戦」では、あなたもCPUも同じ回数で、どちらも当てられなければ引き分けです。</li>
-            <li>制限時間は、「自分が当てる」で1〜10分から選べます。</li>
+            <li>制限時間は、「自分が当てる」で30秒〜3分から選べます。</li>
+            <li>「制限時間30秒」「5ターン」「ボール10個」は、最難関の設定です。選ぶと、画面に「最難関」の表示が出ます。</li>
           </ul>
         </section>
+
+        </div>
 
         <div class="rule-dots" aria-hidden="true"><i class="dot on"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
         <label class="rule-skip"><input type="checkbox" id="ruleSkip"> 次回から説明を表示しない</label>
         <div class="rule-nav">
-          <button type="button" id="rulePrev" hidden>戻る</button>
+          <button type="button" id="rulePrev" disabled>戻る</button>
           <button type="button" id="ruleNext" class="primary">次へ</button>
         </div>
       </div>
