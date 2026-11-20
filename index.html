@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#26292c">
 </head>
-<body>
-  <div class="page">
+<body class="intro-open">
+  <div class="page" inert>
     <header class="top">
       <h1>ヒット&amp;ブロー</h1>
       <label class="mode">モード
@@ -29,6 +29,21 @@
           <option value="8">8個</option>
           <option value="9">9個</option>
           <option value="10">10個</option>
+        </select>
+      </label>
+      <label class="mode">ターン数
+        <select id="turns">
+          <option value="5">5回</option>
+          <option value="6">6回</option>
+          <option value="7">7回</option>
+          <option value="8">8回</option>
+          <option value="9">9回</option>
+          <option value="10" selected>10回</option>
+          <option value="11">11回</option>
+          <option value="12">12回</option>
+          <option value="13">13回</option>
+          <option value="14">14回</option>
+          <option value="15">15回</option>
         </select>
       </label>
       <label class="mode">制限時間
@@ -79,9 +94,9 @@
     <button type="button" id="restart" class="primary" hidden>もう一度あそぶ</button>
   </div>
 
-  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-label="ヒット&amp;ブロー" tabindex="-1" hidden>
+  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-label="ヒット&amp;ブロー" tabindex="-1">
     <!-- オープニング -->
-    <div id="introTitle" class="intro-title">
+    <div id="introTitle" class="intro-title play">
       <button type="button" id="introSkip" class="intro-skip">スキップ</button>
       <div class="intro-unit" aria-hidden="true">
         <div class="keys" style="--kc:2">
@@ -118,7 +133,7 @@
           <div class="rule-fig">
             <div class="col active"><div class="holes"><span class="ball c0"></span><span class="ball c2"></span><span class="ball c1"></span><span class="ball c5"></span></div></div>
           </div>
-          <p>下の色をえらぶと、光っている列に上から順にボールが入ります。入れたい場所(穴)を先にクリックして選ぶと、その場所だけを入れ替えられます。選んでいるボールをもう一度クリックすると外れます。4つ並べたら「これで決定」。予想では、同じ色を何回使ってもOKです。10回以内に当てましょう。</p>
+          <p>下の色をえらぶと、光っている列に上から順にボールが入ります。入れたい場所(穴)を先にクリックして選ぶと、その場所だけを入れ替えられます。選んでいるボールをもう一度クリックすると外れます。4つ並べたら「これで決定」。予想では、同じ色を何回使ってもOKです。決まったターン数以内に当てましょう(ターン数は画面上部の設定で変えられます)。</p>
         </section>
 
         <section class="rule-step" hidden>
@@ -141,6 +156,7 @@
             <li><b>自分が当てる</b>:コンピュータが決めた答えを当てます。</li>
             <li><b>交互に対戦</b>:あなたとCPUが1回ずつ交代で相手の答えを予想し、先に当てた方の勝ちです(あなたが先攻)。</li>
             <li>ボールの数は4〜10個です(交互に対戦は8個まで)。7個以上のときは、色もボールの数と同じだけ使います。</li>
+            <li>ターン数は5〜15回から選べます(初期設定は10回)。「交互に対戦」では、あなたもCPUも同じ回数で、どちらも当てられなければ引き分けです。</li>
             <li>制限時間は、「自分が当てる」で1〜10分から選べます。</li>
           </ul>
         </section>

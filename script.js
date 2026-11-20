@@ -1,10 +1,11 @@
 // 色の名前は画面に出さず、読み上げ用にだけ使う(見た目は style.css の .c0〜.c9)
 const COLORS = ["青", "赤", "緑", "黄", "桃", "白", "橙", "紫", "水", "茶"];
-const MAX_TURNS = 10;
+let MAX_TURNS = 10; // ターン数(画面上部の設定で5〜15回から選ぶ)
 const CPU_DELAY = 800; // CPUが次の予想を出すまでの時間(ミリ秒)
 
 const $ = (id) => document.getElementById(id);
 const slotsSelect = $("slots");
+const turnsSelect = $("turns");
 const limitSelect = $("limit");
 const modeSelect = $("mode");
 
@@ -48,6 +49,7 @@ function judge(ans, g) {
 }
 
 function newGame() {
+  MAX_TURNS = Number(turnsSelect.value);
   mode = modeSelect.value;
   const multi = mode !== "player"; // CPUと対戦するモード
   // CPUは候補を全部数え上げるので、ボールは8個まで
@@ -86,7 +88,7 @@ function drawBoard(el, o) {
   el.replaceChildren();
   el.style.setProperty("--n", slots);
   el.style.setProperty("--kc", Math.ceil(slots / 2));
-  const ncols = mode === "player" ? MAX_TURNS : Math.max(MAX_TURNS, o.rows.length + (over ? 0 : 1));
+  const ncols = MAX_TURNS;
 
   const cols = document.createElement("div");
   cols.className = "cols";
@@ -213,7 +215,7 @@ function render() {
     o = { rows: log, ans: answer, answerMode: over ? "show" : "cover", activeCol: over ? -1 : log.length, draft: guess };
   } else {
     const mine = phase === "play" && turn === "player" && !over;
-    title = `あなたの盤:CPUの答えを当てる(${log.length}回目まで)`;
+    title = `あなたの盤:CPUの答えを当てる(${log.length} / ${MAX_TURNS} 回目まで)`;
     o = { rows: log, ans: answer, answerMode: over ? "show" : "cover", activeCol: mine ? log.length : -1, draft: mine ? guess : [] };
   }
   $("mainTitle").textContent = title;
@@ -306,8 +308,15 @@ function cpuStep() {
       const x = judge(c, g);
       return x.hit === r.hit && x.blow === r.blow;
     });
-    turn = "player";
-    $("message").textContent = "あなたの番です";
+    if (cpuLog.length >= MAX_TURNS) {
+      // 先攻のあなたも同じ回数を使い終えているので、ここで引き分け
+      over = true;
+      $("message").textContent = `引き分けです(お互い${MAX_TURNS}回では当てられませんでした)`;
+      $("restart").hidden = false;
+    } else {
+      turn = "player";
+      $("message").textContent = "あなたの番です";
+    }
   }
   render();
 }
@@ -354,6 +363,7 @@ $("restart").onclick = newGame;
 slotsSelect.onchange = newGame;
 limitSelect.onchange = newGame;
 modeSelect.onchange = newGame;
+turnsSelect.onchange = newGame;
 
 // ===== オープニング と ルール説明 =====
 // 「次回から説明を表示しない」は、このブラウザの localStorage に覚えておく
@@ -408,10 +418,7 @@ function showStage(stage) {
   clearTimeout(introTimer);
   for (const [name, id] of Object.entries(STAGES)) $(id).hidden = name !== stage;
   if (stage === "title") {
-    const t = $("introTitle");
-    t.classList.remove("play");
-    void t.offsetWidth; // アニメーションを最初からやり直す
-    t.classList.add("play");
+    $("introTitle").classList.add("play"); // (HTMLに最初からついているので、通常は何もしない)
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     introTimer = setTimeout(afterTitle, reduce ? 1200 : 3700);
   } else if (stage === "rules") {
