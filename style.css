@@ -151,7 +151,7 @@ body.intro-open { overflow: hidden; }
 .intro[hidden], .intro [hidden] { display: none !important; }
 .intro-title {
   --ball: 56px; position: relative; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 18px; width: 100%; min-height: 100%; cursor: pointer;
+  justify-content: center; gap: 18px; width: 100%; min-height: 100%;
 }
 .intro-skip { position: absolute; top: 0; right: 0; }
 .intro-unit { display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -166,7 +166,6 @@ body.intro-open { overflow: hidden; }
 .intro-title.play .intro-logo { animation: logoIn .7s both; animation-delay: 2.6s; }
 .intro-logo { margin: 0; font-size: clamp(2rem, 8vw, 3.2rem); font-weight: 900; letter-spacing: .04em; text-shadow: 0 4px 0 rgba(0,0,0,.4); }
 .intro-logo .h, .intro-logo .bang { color: var(--hit); }
-.intro-hint { margin: 0; color: #9aa0a6; font-size: .9rem; }
 @keyframes drop { 0% { transform: translateY(-100vh); } 55% { transform: translateY(0); } 70% { transform: translateY(-22px); } 85% { transform: translateY(0); } 92% { transform: translateY(-6px); } 100% { transform: translateY(0); } }
 @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
 @keyframes logoIn { 0% { opacity: 0; transform: scale(.4) rotate(-8deg); } 70% { opacity: 1; transform: scale(1.12) rotate(2deg); } 100% { opacity: 1; transform: none; } }
@@ -185,6 +184,7 @@ body.intro-open { overflow: hidden; }
 .rule-list li + li { margin-top: 6px; }
 .rules-card h3 { margin: 0 0 12px; padding-right: 2.5em; font-size: 1.2rem; }
 .rules-card .menu-back { margin-bottom: 12px; padding: 2px 12px; font-size: .85rem; }
+.intro[data-from="opening"] #introRules .menu-back { display: none; } /* 最初の説明(オープニングの後)では「← メニュー」を出さない */
 .menu-list, .tips-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .menu-list button { width: 100%; padding: 14px 18px; text-align: left; font-size: 1.05rem; }
 .menu-list button::after { content: "›"; float: right; }

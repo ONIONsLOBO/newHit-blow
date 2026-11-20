@@ -398,6 +398,7 @@ function openIntro(stage) {
 
 function showStage(stage) {
   if (introStage === "rules" && stage !== "rules") saveSkip($("ruleSkip").checked); // ルールから出る時も「表示しない」を保存
+  if (stage === "rules") intro.dataset.from = introStage === "menu" ? "menu" : "opening"; // どこから来たか(「← メニュー」の出し分け用)
   introStage = stage;
   clearTimeout(introTimer);
   for (const [name, id] of Object.entries(STAGES)) $(id).hidden = name !== stage;
@@ -447,7 +448,7 @@ function closeIntro() {
   hideTimer = setTimeout(() => { intro.hidden = true; }, 400);
 }
 
-$("introTitle").onclick = afterTitle;
+$("introSkip").onclick = afterTitle; // スキップは右上のボタンだけ
 document.querySelectorAll(".rule-close").forEach((b) => { b.onclick = closeIntro; });
 document.querySelectorAll("[data-go]").forEach((b) => { b.onclick = () => showStage(b.dataset.go); });
 $("rulePrev").onclick = () => showRule(Number(intro.dataset.step) - 1);
